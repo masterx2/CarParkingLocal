@@ -4,41 +4,43 @@
 	<meta charset="UTF-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1">
+	<script src="js/crypto/aes.js"></script>
+	<script src="js/crypto/sha3.js"></script>
 	<script src="js/jquery.js"></script>
 	<script src="js/moment-with-langs.min.js"></script>
 	<script src="js/main.js"></script>
 	<script src="js/bootstrap.min.js"></script>
 	<link rel="stylesheet" href="css/bootstrap.min.css">
 	<link rel="stylesheet" href="css/style.css">
-	<title>CarParking</title>
+	<title>Стоянка</title>
 </head>
 <body>
 <div class="container">
 	<nav class="navbar navbar-default" role="navigation">
 	<div class="navbar-header">
 			<button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".navbar-ex1-collapse">
-				<span class="sr-only">Toggle navigation</span>
+				<span class="sr-only">Показать навигацию</span>
 				<span class="icon-bar"></span>
 				<span class="icon-bar"></span>
 				<span class="icon-bar"></span>
 			</button>
-			<a class="navbar-brand" href="">Car Parking</a>
+			<a class="navbar-brand" href="">Стоянка</a>
 		</div>
 		<div class="collapse navbar-collapse navbar-ex1-collapse">
 			<ul class="nav navbar-nav">
-				<li class="active"><a href="#">Home</a></li>
-				<li><a href="#">Overdue <span class="badge">4</span></a></li>
+				<li class="active"><a href="#">Активные</a></li>
+				<li><a href="#">Просроченные <span class="badge">0</span></a></li>
 			</ul>
 			<form class="navbar-form navbar-right" role="search">
 				<div class="form-group">
-					<input type="text" class="form-control" placeholder="Search">
+					<input type="text" class="form-control" placeholder="квит/место/госном">
 				</div>
-				<button type="submit" class="btn btn-default">Submit</button>
+				<button type="submit" class="btn btn-default">Поиск</button>
 			</form>
 			<ul class="nav navbar-nav navbar-left">
-				<li><a href="#">History</a></li>
+				<li><a href="#">История</a></li>
 				<li class="dropdown">
-					<a href="#" class="dropdown-toggle" data-toggle="dropdown">Tools <b class="caret"></b></a>
+					<a href="#" class="dropdown-toggle" data-toggle="dropdown">Действия <b class="caret"></b></a>
 					<ul class="dropdown-menu">
 						<li><a href="#">Action</a></li>
 						<li><a href="#">Another action</a></li>
@@ -47,6 +49,9 @@
 					</ul>
 				</li>
 			</ul>
+			<ul class="nav navbar-nav navbar-right" id="login-control">
+				<li><a id="loginlink" href="#" data-toggle="modal" data-target="#loginModal">Войти</a></li>
+			</ul>
 		</div>
 	</nav>
 	<div class="row">
@@ -54,17 +59,53 @@
 			<div class="panel panel-primary">
 				  <div class="panel-heading">
 						<h3 class="panel-title">
-							Current Cars
+							Машины на стоянке
 							<span class="badge" id="normal-cars-count">0</span>
-							<span class="label label-info pull-right" id="cost-per-day">Cost per day: </span>
 						</h3>
 				  </div>
 				  <div class="panel-body" id="primary-table">
-						Loading Data ...
+
 				  </div>
 			</div>
 		</div>
 	</div>
 </div>
+
+<!-- Login Modal -->
+<div class="modal fade" id="loginModal">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal"><span aria-hidden="true">&times;</span><span class="sr-only">Close</span></button>
+        <h4 class="modal-title">Авторизация</h4>
+      </div>
+      <div class="modal-body">
+        <div class="form-horizontal" role="form">
+		  <div class="form-group">
+		    <label for="inputLogin" class="col-sm-offset-1 col-sm-2 control-label">Логин</label>
+		    <div class="col-sm-8">
+		      <input type="login" class="form-control" id="inputLogin" placeholder="Логин">
+		    </div>
+		  </div>
+		  <div class="form-group">
+		    <label for="inputPassword" class="col-sm-offset-1 col-sm-2 control-label">Пароль</label>
+		    <div class="col-sm-8">
+		      <input type="password" class="form-control" id="inputPassword" placeholder="Пароль">
+		    </div>
+		  </div>
+		  <div class="form-group">
+		    <div class="col-sm-offset-1 col-sm-10">
+		      <button id="actionLogin" class="btn btn-primary pull-right">Войти</button>
+		    </div>
+		  </div>
+		</div>
+      </div>
+      </div>
+    </div><!-- /.modal-content -->
+  </div><!-- /.modal-dialog -->
+</div><!-- /.modal -->
+
+
 </body>
 </html>
+
