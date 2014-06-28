@@ -1,6 +1,61 @@
 body {
-    background: rgb(0, 35, 111);
+	background: rgb(28, 176, 233);
 }
 .navbar {
-    margin-top: 15px;
+	margin-top: 15px;
+	box-shadow: 0 0 5px rgb(168, 168, 168);
+}
+
+
+.vardump {
+	width: 80%;
+	margin: auto;
+	border-radius: 0;
+	color: rgb(0, 255, 143);
+	padding: 20px;
+}
+pre {
+	background-color: rgb(39, 39, 39);
+	border-bottom: 1px solid red;
+	border-left: 1px solid red;
+	border-right: 1px solid red;
+	border-top: 0;
+	opacity: 0.9;
+}
+.json-key {
+	color: rgb(129, 230, 255);
+}
+.json-value {
+	color: red;
+}
+.json-string {
+	color: rgb(255, 245, 0);
+}
+
+#debug {
+	background: rgb(236, 4, 4);
+	height: 25px;
+	line-height: 24px;
+	width: 100px;
+	text-align: center;
+	margin: auto;
+	border-radius: 0px 0px 10px 10px;
+	font-weight: bold;
+	color: white;
+	box-shadow: 0 0 3px black;
+	cursor: pointer;
+}
+#debug:hover {
+	background: rgb(156, 0, 0);
+}
+.panel.panel-primary {
+    border: 1px solid white;
+    box-shadow: 0 0 4px black;
+}
+.navbar {
+    border: 1px solid white;
+    box-shadow: 0 0 1px black;
+}
+#delUser {
+    margin-right: 10px;
 }

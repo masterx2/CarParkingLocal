@@ -1,6 +1,6 @@
 $(function () {
 	window.cp = new CarPark({
-		'container': '#primary-table'
+		'container': '#primary-display'
 	});
 });
 
@@ -32,10 +32,17 @@ function CarPark (opts) {
 					.append('<span class="label label-danger">Выход</span>')
 					.click(_.logout);
 			$('#login-control').empty().append(user_title.append(user_href));
+			if (_.auth_rights.indexOf('batman') == -1) {$('.vardump').remove();$('#debug').remove()}
 		} else {
 			$('#actionLogin').click(_.loginProcess);
+			$('.vardump').remove();$('#debug').remove();
 			_.criticalError('guest');
 		}
+
+		$('#manageUsers').click(function(){_.container.empty();_.manageUsers()});
+		$('#saveUser').click(_.saveUser);
+		$('.vardump').hide();
+		$('#debug').click(function(){$('.vardump').slideToggle();})
 
 		// Загружаем данные
 		_.load();
@@ -43,8 +50,14 @@ function CarPark (opts) {
 
 	_.load = function () {
 		// Права на этот метод
-		if (_.checkRights('admin')) {
+		if (_.checkRights('user')) {
+			// Читаем главное хранилище загружаем главный объект
+			_.data = localStorage.getItem('main-storage');
+			if (_.data != null) {
 
+			} else {
+				_.criticalError('custom', 'бля базы то нету)');
+			}
 		} else {_.criticalError('no-rights');}
 	};
 
@@ -71,7 +84,7 @@ function CarPark (opts) {
 					// Теперь как братья
 					window.location.reload();
 				} else {
-					// Иди проверь бля пароль олень
+					// Иди проверь пароль олень
 					_.criticalError('wrong-pass');
 					$('#loginModal').modal('hide');	
 				}
@@ -136,6 +149,113 @@ function CarPark (opts) {
 		return false
 	}
 
+	_.manageUsers = function () {
+		// Права на этот метод
+		if (_.checkRights('user')) {
+			// Перекличка! 
+			var users = JSON.parse(localStorage.getItem('users')),
+				wrapper = $('<div>').addClass('col-sm-offset-2 col-sm-8'),
+				addButton = $('<button>')
+					.text('Добавить')
+					.addClass('btn btn-info')
+					.click(function(){_.editUser('addNew')});
+			if (users != null) {
+				_.container.append(wrapper.append(_.generateWindow('Управление Пользователями',
+					_.generateUserGrid(users).append(addButton))));
+			} else {
+				_.criticalError('custom', 'Пользователи не найдены, это пиздец странно!');
+			}
+		} else {_.criticalError('no-rights');}
+	}
+
+	_.editUser = function (user) {
+		if (_.checkRights('admin')) {
+			if (user != 'addNew') {
+				var username = $(user)
+					.parent().parent()
+					.children(':nth-child(1)')
+					.text(),
+					realname = _.users[username].realname,
+					rights = _.users[username].rights.join(',');
+				$('#loginEdit').attr('disabled','').val(username);
+				$('#nameEdit').val(realname);
+				$('#rightsEdit').val(rights)
+				$('#delUser').show().click(function() {
+					_.delUser(username);
+				});
+			} else {
+				$('#delUser').hide().unbind();
+				$('#loginEdit').val('').removeAttr('disabled');
+				$('#passwordEdit').val('');
+				$('#nameEdit').val('');
+				$('#rightsEdit').val('');
+			}
+			$('#userModal').modal('show');
+		} else {_.criticalError('no-rights');}
+	}
+
+	_.saveUser = function () {
+		var login = $('#loginEdit').val(),
+			pass = $('#passwordEdit').val(),
+			name = $('#nameEdit').val(),
+			rights = $('#rightsEdit').val().split(',');
+		
+		$('#userModal').modal('hide');
+		
+		if (login == '' || name == '' || rights.lenght < 1) {
+			_.criticalError('custom', 'Неверный формат данных!');
+		} else {
+			if (pass == '') {
+				var hash = _.users[login].hash;
+			} else {
+				var hash = CryptoJS.SHA3(pass).toString();
+			}
+			_.users[login] = {
+				'realname': name,
+				'rights' : rights,
+				'hash' : hash
+			}
+			_.log([login, pass, name, rights]);
+			localStorage.setItem('users', JSON.stringify(_.users));
+			_.container.empty();
+			_.infoMessage('Данные успешно изменены!');
+			_.manageUsers();
+		}
+	}
+
+	_.delUser = function (username) {
+		delete _.users[username];
+		localStorage.setItem('users', JSON.stringify(_.users));
+		_.container.empty();
+		_.infoMessage('Данные успешно изменены!');
+		_.manageUsers();
+		$('#userModal').modal('hide');
+	}
+
+	_.generateUserGrid = function (users) {
+		table_header_data = ['Логин', 'Имя', 'Права'];
+		var data = {}
+		for (user in users) {
+			data[user] = [user,
+						  users[user].realname,
+						  users[user].rights.join(','),
+						  $('<button>')
+						  	.text('Изменить')
+						  	.addClass('btn btn-success')
+						  	.click(function(){_.editUser(this);})
+						  ];
+		}
+		return _.generateTable(table_header_data, data);
+	}
+
+	_.generateWindow = function (header, content) {
+		var okno = $('<div>').addClass('panel panel-primary'),
+			heading = $('<div>').addClass('panel-heading')
+				.append($('<h3>').addClass('panel-title').text(header)),
+			body = $('<div>').addClass('panel-body').append(content);
+		return okno.append(heading).append(body);
+	}
+
 	_.generateSessionHash = function(username) {
 		var magic = new Date().getTime().toString().slice(0,5);
 		return CryptoJS.MD5('AbrAcAdaBra'+username+magic).toString();
@@ -177,34 +297,62 @@ function CarPark (opts) {
 			Внимание!</strong> '+message+'</div>');
 	}
 
-	_.genMainTable = function (data) {
+	_.infoMessage = function(custom_message) {
+		_.container.empty().append('<div class="alert alert-success"><button type="button" \
+			class="close" data-dismiss="alert" aria-hidden="true">&times;</button><strong> \
+			Внимание!</strong> '+custom_message+'</div>');
+	}
+
+	_.generateTable = function (table_header_data, data) {
 		var table = $('<table>').addClass('table table-hover'),
 			// Prepare header
-			table_header = $('<thead>'),
-			table_header_data = ['#', 'Parkplace', 'Owner', 'Money Left', 'Days Left', 'Description'];
-			for (var th_index in table_header_data) {
-				table_header.append($('<th>').text(table_header_data[th_index]));
+			table_header = $('<thead>');
+		for (var th_index in table_header_data) {
+			table_header.append($('<th>').text(table_header_data[th_index]));
+		}
+		table.append(table_header);
+		// Render Data
+		var table_body = $('<tbody>');
+		for (var row in data) {
+			var table_row = $('<tr>');
+			for (var item in data[row]) {
+				var table_cell = $('<td>').append(data[row][item]);
+				table_row.append(table_cell);
 			}
-			table.append(table_header);
-			// Render Data
-			var table_body = $('<tbody>');
-			for (var row in data) {
-				var table_row = $('<tr>');
-				for (var item in data[row]) {
-					var table_cell = $('<td>').text(data[row][item]);
-					table_row.append(table_cell);
-				}
-				table_body.append(table_row);
-			}
-			table.append(table_body);
-
-			// Table Render
-			_.container.empty().append(table);
+			table_body.append(table_row);
+		}
+		return table.append(table_body);
 	}
 	
+	// Tools
 	_.log = function (data) {
 		if(_.DEBUG){console.log(data);}
 	};
+
+	_.vardump = function (data) {
+		$('.vardump').empty().append(_.jsonPretty.prettyPrint(data)).slideDown();
+	}
+
+	_.jsonPretty = {
+		replacer: function(match, pIndent, pKey, pVal, pEnd) {
+			var key = '<span class=json-key>';
+	        var val = '<span class=json-value>';
+	        var str = '<span class=json-string>';
+	        var r = pIndent || '';
+	        if (pKey)
+	        	r = r + key + pKey.replace(/[": ]/g, '') + '</span>: ';
+	        if (pVal)
+	        	r = r + (pVal[0] == '"' ? str : val) + pVal + '</span>';
+	        return r + (pEnd || '');
+	    },
+	    prettyPrint: function(obj) {
+	    	var jsonLine = /^( *)("[\w]+": )?("[^"]*"|[\w.+-]*)?([,[{])?$/mg;
+	    		return JSON.stringify(obj, null, 3)
+	    		.replace(/&/g, '&amp;').replace(/\\"/g, '&quot;')
+	            .replace(/</g, '&lt;').replace(/>/g, '&gt;')
+	            .replace(jsonLine, _.jsonPretty.replacer);
+	        }
+	    };
 
 	_.init()
 }
