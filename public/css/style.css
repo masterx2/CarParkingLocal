@@ -59,3 +59,15 @@ pre {
 #delUser {
     margin-right: 10px;
 }
+
+#addCarModal .control-label {
+    font-size: 83%;
+    line-height: 12px;
+    margin-top: 3px;
+}
+#clearForm {
+    margin-right: 10px;
+}
+.datepicker {
+    z-index: 1500 !important;
+}
