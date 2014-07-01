@@ -71,3 +71,10 @@ pre {
 .datepicker {
     z-index: 1500 !important;
 }
+.container {
+    min-height: 200px;
+}
+#primary-display > .panel > .panel-body {
+    max-height: 600px;
+    overflow-y: overlay;
+}

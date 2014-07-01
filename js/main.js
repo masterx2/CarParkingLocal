@@ -38,12 +38,42 @@ function CarPark(opts) {
         _.container = $(opts.container);
 
         _.log('Проснулися, начинаем шевелится');
+        
         // Читаем главное хранилище на предмет пользователей
-        _.users = JSON.parse(localStorage.getItem('users'));
-        if (_.users == null) {
-            _.criticalError('custom', 'Error Read Users Object!')
-            throw 'Бля чёт с хранилищем, не могу получить список пользователей';
-        }
+        chrome.storage.local.get('users',function(data){
+            _.users = data.users
+            if (typeof _.users != "undefined") {
+                _.buildApp();
+            } else {
+                _.firstRun();
+            }
+        })
+    }
+
+    _.firstRun = function () {
+        $('.vardump').remove();
+        $('#debug').remove();
+
+        _.users = {
+                "admin": {
+                    "realname": "Главный Администратор",
+                    "hash" : CryptoJS.SHA3('admin').toString(),
+                    "rights": ["user", "admin", "batman"]
+                }
+            };
+
+        chrome.storage.local.set({"users": _.users});
+
+        var header = 'Первый запуск!',
+            content = $('<h3>').text('Инициализация приложения - Парковка')
+                .add($('<p>').text('Привет, для начала работы с приложением необходимо авторизироватся \
+                    логин и пароль по умолчанию admin')),
+            win = _.generateWindow(header, content);
+        _.container.empty().append(win);
+        $('#actionLogin').click(_.loginProcess);
+    }
+    
+    _.buildApp = function () {
         // Строим интерфейс
         _.checkRights();
         if (_.auth) {
@@ -58,16 +88,28 @@ function CarPark(opts) {
                     .append('<span class="label label-danger">Выход</span>')
                     .click(_.logout);
             $('#login-control').empty().append(user_title.append(user_href));
-            if (_.auth_rights.indexOf('batman') == -1) {
+            if (!_.checkRights('batman')) {
                 $('.vardump').remove();
-                $('#debug').remove()
+                $('#debug').remove();
+            } else {
+                $('.vardump').hide();
+                $('#debug').show().click(function () {
+                    $('.vardump').slideToggle();
+                });
             }
+
         } else {
+            $('#login-control').html('<li><a id="loginlink" href="#" data-toggle="modal" data-target="#loginModal">Войти</a></li>');
             $('#actionLogin').click(_.loginProcess);
-            $('.vardump').remove();
-            $('#debug').remove();
+            _.container.empty();
+            $('.vardump').hide();
+            $('#debug').hide();
             _.criticalError('guest');
         }
+
+        $('#mainscreen').click(function () {
+            _.load();
+        })
 
         $('#manageUsers').click(function () {
             _.container.empty();
@@ -96,17 +138,11 @@ function CarPark(opts) {
             }
             if (!_.checkRights('admin')) {
             	$('#addDate').attr('disabled','');
+            } else {
+                $('#addDate').removeAttr('disabled');
             }
 
         });
-
-        /// DEBUG TOOLS
-        $('.vardump').hide();
-        $('#debug').click(function () {
-            $('.vardump').slideToggle();
-        });
-
-        // Загружаем данные
         _.load();
     };
 
@@ -114,19 +150,50 @@ function CarPark(opts) {
         // Права на этот метод
         if (_.checkRights('user')) {
             // Читаем главное хранилище загружаем главный объект
-            var storage = localStorage.getItem('main-storage');
-            if (storage != '') {
-                _.data = JSON.parse(storage);
-                _.vardump(_.data);
-                var header = 'Машины на стоянке';
-                var content = _.generateTable('[]', _.data);
-                var window = _.generateWindow(header, content);
-                _.container.append(window);
+            chrome.storage.local.get('main-storage', function(data) {
+                _.data = data['main-storage']
+                if (_.data) {
+                    _.log(_.data);
 
-            } else {
-                _.data = {};
-                _.criticalError('custom', 'бля базы то нету)');
-            }
+                    var now = new Date().getTime()/1e3,
+                        active = [],
+                        tabl_header = [
+                            'Квитанция',
+                            'Место',
+                            'Имя',
+                            'Марка',
+                            'Гос.Номер',
+                            'Стоимость',
+                            'Остаток'
+                        ]
+
+                    // Логика стоянки
+                    for (var order in _.data) {
+                        var car = _.data[order];
+                        if (car.status = 1) {
+                            // Машина на стоянке
+                            table_row = [
+                                order,
+                                car.placeNum,
+                                car.ownerName,
+                                car.carBrand,
+                                car.gosNum,
+                                car.costPerDay,
+                                car.sumPayed - (Math.floor((now - car.addDate)/86400)*car.costPerDay)
+                            ];
+                            active.push(table_row);
+                        }
+                    }
+
+                    var header = 'Машины на стоянке';
+                    var content = _.generateTable(tabl_header, active);
+                    var win = _.generateWindow(header, content);
+                    _.container.empty().append(win);
+                } else {
+                    _.criticalError('custom','Ошибка чтения базы!');
+                    _.data = {};
+                }
+            });
         } else {
             _.criticalError('no-rights');
         }
@@ -154,7 +221,10 @@ function CarPark(opts) {
                     };
                     sessionStorage.setItem('auth', JSON.stringify(auth));
                     // Теперь как братья
-                    window.location.reload();
+                    $('#loginModal').modal('hide');
+                    $('#inputLogin').val(''),
+                    $('#inputPassword').val('');
+                    _.buildApp();
                 } else {
                     // Иди проверь пароль олень
                     _.criticalError('wrong-pass');
@@ -176,7 +246,7 @@ function CarPark(opts) {
         _.auth = false;
         _.auth_user = null;
         _.auth_rights = null;
-        window.location.reload();
+        _.buildApp();
     }
 
     _.checkRights = function (requestedRights) {
@@ -270,8 +340,7 @@ function CarPark(opts) {
 
             _.data[car_id] = car;
             
-            localStorage.setItem('main-storage', JSON.stringify(_.data));
-
+            chrome.storage.local.set({'main-storage': _.data});
             _.infoMessage('Машина успешно поставлена на стоянку!');
             $('#addCarModal').modal('hide');
         }
@@ -295,20 +364,15 @@ function CarPark(opts) {
         // Права на этот метод
         if (_.checkRights('user')) {
             // Перекличка!
-            var users = JSON.parse(localStorage.getItem('users')),
-                wrapper = $('<div>').addClass('col-sm-offset-2 col-sm-8'),
+            var wrapper = $('<div>').addClass('col-sm-offset-2 col-sm-8'),
                 addButton = $('<button>')
                     .text('Добавить')
                     .addClass('btn btn-info')
                     .click(function () {
                         _.editUser('addNew')
                     });
-            if (users != null) {
-                _.container.append(wrapper.append(_.generateWindow('Управление Пользователями',
-                    _.generateUserGrid(users).append(addButton))));
-            } else {
-                _.criticalError('custom', 'Пользователи не найдены, это пиздец странно!');
-            }
+            _.container.append(wrapper.append(_.generateWindow('Управление Пользователями',
+            _.generateUserGrid(_.users).append(addButton))));
         } else {
             _.criticalError('no-rights');
         }
@@ -364,7 +428,7 @@ function CarPark(opts) {
                 'hash': hash
             }
             _.log([login, pass, name, rights]);
-            localStorage.setItem('users', JSON.stringify(_.users));
+            chrome.storage.local.set({'users':_.users});
             _.container.empty();
             _.infoMessage('Данные успешно изменены!');
             _.manageUsers();
@@ -442,9 +506,12 @@ function CarPark(opts) {
                 var message = "Что-то пошло не так. Просто смирись с этим.";
                 break;
         }
-        _.container.empty().append('<div class="alert alert-danger"><button type="button" \
+        _.container.empty().append('<div class="alert alert-danger" id="infoSplash"><button type="button" \
 			class="close" data-dismiss="alert" aria-hidden="true">&times;</button><strong> \
 			Внимание!</strong> ' + message + '</div>');
+        setTimeout(function () {
+            $('#infoSplash').fadeOut();
+        },1000);
     }
 
     _.infoMessage = function (custom_message) {
