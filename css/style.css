@@ -1,5 +1,7 @@
 body {
-	background: rgb(28, 176, 233);
+	background: url('/img/back.jpeg') 50% 0% no-repeat;
+	background-clip: border-box;
+	background-size: cover;
 }
 .navbar {
 	margin-top: 15px;
@@ -47,10 +49,6 @@ pre {
 }
 #debug:hover {
 	background: rgb(156, 0, 0);
-}
-.panel.panel-primary {
-    border: 1px solid white;
-    box-shadow: 0 0 4px black;
 }
 .navbar {
     border: 1px solid white;
