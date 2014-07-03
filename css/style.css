@@ -1,3 +1,8 @@
+@font-face {
+font-family: Roubl;
+src: url("../fonts/rouble.otf") format("opentype");
+}
+
 body {
 	background: url('/img/back.jpeg') 50% 0% no-repeat;
 	background-clip: border-box;
@@ -75,4 +80,38 @@ pre {
 #primary-display > .panel > .panel-body {
     max-height: 600px;
     overflow-y: overlay;
+    background: rgb(190, 216, 255);
+}
+.gosnum {
+    border: 1px solid rgb(94, 94, 94);
+    padding: 0px 3px;
+    border-radius: 5px;
+    box-shadow: 0 0 2px rgb(173, 173, 173);
+    width: 100px;
+    display: block;
+    text-align: center;
+    font-variant: small-caps;
+    font-size: 110%;
+    background: white;
+    color: rgb(37, 37, 37);
+}
+.active-header {
+    margin-right: 7px;
+}
+table.active > tbody > tr > td {
+    padding: 6px 7px;
+    vertical-align: middle;
+    border: 0;
+    border-bottom: 1px solid rgb(126, 178, 255);
+}
+table.active > tbody > tr:hover {
+    background: rgb(255, 194, 0);
+    color: black;
+}
+table.active > tbody > tr > td:hover {
+    text-decoration: underline;
+}
+.rubl:after {
+    content: "p";
+    font-family: Roubl;
 }

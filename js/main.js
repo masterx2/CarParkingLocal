@@ -119,12 +119,14 @@ function CarPark(opts) {
         $('#saveCar').click(function(){
             _.container.empty();
             _.saveCar();
+            _.load();
         });
 
         $('#costPerDay, #sumPayed, #daysPayed, #outDate').keyup(_.calculate);
         $('#costPerDay').val('160');
         $('#clearForm').click(function(){
-            $('#addCarModal input:not(#addDate)').val('');
+            $('#addCarModal input').val('');
+            $('#addDate').val(_.toRusDate(new Date()))
             $('#costPerDay').val('160');
         })
 
@@ -132,6 +134,7 @@ function CarPark(opts) {
         $('#addCar').click(function(){
         	$('#addDate').val(_.toRusDate(new Date()))
             if (_.checkRights('user')) {
+                $('#clearForm').trigger('click');
                 $('#addCarModal').modal('show');
             } else {
                 _.criticalError('no-rights');
@@ -155,7 +158,8 @@ function CarPark(opts) {
                 if (_.data) {
                     _.log(_.data);
 
-                    var now = new Date().getTime()/1e3,
+                    var active_cars_count = 0,
+                        now = new Date().getTime()/1e3,
                         active = [],
                         tabl_header = [
                             'Квитанция',
@@ -164,7 +168,8 @@ function CarPark(opts) {
                             'Марка',
                             'Гос.Номер',
                             'Стоимость',
-                            'Остаток'
+                            'Остаток',
+                            'Дней'
                         ]
 
                     // Логика стоянки
@@ -172,21 +177,24 @@ function CarPark(opts) {
                         var car = _.data[order];
                         if (car.status = 1) {
                             // Машина на стоянке
+                            active_cars_count++
                             table_row = [
                                 order,
                                 car.placeNum,
                                 car.ownerName,
                                 car.carBrand,
-                                car.gosNum,
-                                car.costPerDay,
-                                car.sumPayed - (Math.floor((now - car.addDate)/86400)*car.costPerDay)
+                                $('<span>').addClass('gosnum').text(car.gosNum),
+                                $('<span>').addClass('rubl').text(car.costPerDay),
+                                $('<span>').addClass('rubl').text(
+                                    car.sumPayed - (Math.floor(((now - car.addDate)/86400)+1)*car.costPerDay)),
+                                Math.floor((car.outDate - now)/86400)+1
                             ];
                             active.push(table_row);
                         }
                     }
 
-                    var header = 'Машины на стоянке';
-                    var content = _.generateTable(tabl_header, active);
+                    var header = $('<span>').addClass('active-header').text('Машины на стоянке').add($('<span>').addClass('badge').text(active_cars_count));
+                    var content = _.generateTable(tabl_header, active, 'active');
                     var win = _.generateWindow(header, content);
                     _.container.empty().append(win);
                 } else {
@@ -304,7 +312,7 @@ function CarPark(opts) {
             vals['daysPayed'] = $('#daysPayed').val();
             $('#sumPayed').val(Math.floor(parseInt(vals['costPerDay']) * parseInt(vals['daysPayed'])));
         } else {
-            $('#outDate:not(#'+editId+')').val(_.toRusDate(new Date(_.parseDate($('#addDate').val()).getTime() + (parseInt(vals['daysPayed']))*864e5)));
+            $('#outDate:not(#'+editId+')').val(_.toRusDate(new Date((_.parseDate($('#addDate').val()).getTime() + (parseInt(vals['daysPayed']))*864e5)-1)));
             $('#sumPayed:not(#'+editId+')').val(Math.floor(parseInt(vals['costPerDay']) * parseInt(vals['daysPayed'])));
             $('#daysPayed:not(#'+editId+')').val(Math.floor(parseInt(vals['sumPayed']) / parseInt(vals['costPerDay'])));
         }
@@ -465,7 +473,7 @@ function CarPark(opts) {
     _.generateWindow = function (header, content) {
         var okno = $('<div>').addClass('panel panel-primary'),
             heading = $('<div>').addClass('panel-heading')
-                .append($('<h3>').addClass('panel-title').text(header)),
+                .append($('<h3>').addClass('panel-title').append(header)),
             body = $('<div>').addClass('panel-body').append(content);
         return okno.append(heading).append(body);
     }
@@ -523,8 +531,8 @@ function CarPark(opts) {
         },1000);
     }
 
-    _.generateTable = function (table_header_data, data) {
-        var table = $('<table>').addClass('table table-hover'),
+    _.generateTable = function (table_header_data, data, table_class) {
+        var table = $('<table>').addClass('table '+table_class),
         // Prepare header
             table_header = $('<thead>');
         for (var th_index in table_header_data) {
