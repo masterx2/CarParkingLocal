@@ -1,4 +1,4 @@
-$(function () {
+    $(function () {
     $.fn.datepicker.dates['ru'] = {
         days: ["Воскресенье", "Понедельник", "Вторник", "Среда", "Четверг", "Пятница", "Суббота", "Воскресенье"],
         daysShort: ["Вск", "Пнд", "Втр", "Срд", "Чтв", "Птн", "Суб", "Вск"],
@@ -70,7 +70,7 @@ function CarPark(opts) {
                     логин и пароль по умолчанию admin')),
             win = _.generateWindow(header, content);
         _.container.empty().append(win);
-        $('#actionLogin').click(_.loginProcess);
+        $('#loginlink').click(_.loginProcess);
     }
     
     _.buildApp = function () {
@@ -107,9 +107,15 @@ function CarPark(opts) {
             _.criticalError('guest');
         }
 
+        $("#inputLogin, #inputPassword").keypress(function(e){
+            if (e.keyCode == 13) {
+                $('#actionLogin').trigger('click');
+            }
+        });
+
         $('#mainscreen').click(function () {
             _.load();
-        })
+        });
 
         $('#manageUsers').click(function () {
             _.container.empty();
@@ -126,13 +132,13 @@ function CarPark(opts) {
         $('#costPerDay').val('160');
         $('#clearForm').click(function(){
             $('#addCarModal input').val('');
-            $('#addDate').val(_.toRusDate(new Date()))
+            $('#addDate').val(_.toRusDate(new Date()));
             $('#costPerDay').val('160');
-        })
+        });
 
         $('#saveUser').click(_.saveUser);
         $('#addCar').click(function(){
-        	$('#addDate').val(_.toRusDate(new Date()))
+        	$('#addDate').val(_.toRusDate(new Date()));
             if (_.checkRights('user')) {
                 $('#clearForm').trigger('click');
                 $('#addCarModal').modal('show');
@@ -149,6 +155,8 @@ function CarPark(opts) {
         _.load();
     };
 
+
+
     _.load = function () {
         // Права на этот метод
         if (_.checkRights('user')) {
@@ -156,11 +164,10 @@ function CarPark(opts) {
             chrome.storage.local.get('main-storage', function(data) {
                 _.data = data['main-storage']
                 if (_.data) {
-                    _.log(_.data);
-
-                    var active_cars_count = 0,
-                        now = new Date().getTime()/1e3,
+                    var now = new Date().getTime()/1e3,
                         active = [],
+                        leave_today = [],
+                        overdue = [],
                         tabl_header = [
                             'Квитанция',
                             'Место',
@@ -170,14 +177,16 @@ function CarPark(opts) {
                             'Стоимость',
                             'Остаток',
                             'Дней'
-                        ]
+                        ];
 
                     // Логика стоянки
                     for (var order in _.data) {
                         var car = _.data[order];
-                        if (car.status = 1) {
-                            // Машина на стоянке
-                            active_cars_count++
+                        if (car.status == 1) {
+
+                            var money_left = car.sumPayed - (Math.floor(((now - car.addDate)/86400))*car.costPerDay),
+                                days_left = Math.floor((car.outDate - now)/86400)+1;
+
                             table_row = [
                                 order,
                                 car.placeNum,
@@ -185,18 +194,44 @@ function CarPark(opts) {
                                 car.carBrand,
                                 $('<span>').addClass('gosnum').text(car.gosNum),
                                 $('<span>').addClass('rubl').text(car.costPerDay),
-                                $('<span>').addClass('rubl').text(
-                                    car.sumPayed - (Math.floor(((now - car.addDate)/86400)+1)*car.costPerDay)),
-                                Math.floor((car.outDate - now)/86400)+1
+                                $('<span>').addClass('rubl').text(money_left),
+                                days_left
                             ];
-                            active.push(table_row);
+
+                            if (days_left == 0) {
+                                leave_today.push(table_row);
+                            } else if (days_left < 0) {
+                                overdue.push(table_row);
+                            } else {
+                                active.push(table_row);
+                            }
                         }
                     }
+                    // Таблица уезжающих сегодня
+                    var header = $('<span>')
+                            .addClass('leave-today-header')
+                            .text('Машины уезжающие сегодня')
+                            .add($('<span>').addClass('badge').text(leave_today.length)),
+                        content = _.generateTable(tabl_header, leave_today, 'leave-today'),
+                        leave_window = _.generateWindow(header, content, 'info');
+                    _.container.empty().append(leave_window);
+                    // Таблица активных машин
+                    var header = $('<span>')
+                        .addClass('active-header')
+                        .text('Машины на стоянке')
+                        .add($('<span>').addClass('badge').text(active.length)),
+                        content = _.generateTable(tabl_header, active, 'active'),
+                        active_window = _.generateWindow(header, content);
+                    _.container.append(active_window);
+                    // Таблица просроченных машин
+                    var header = $('<span>')
+                            .addClass('overdue-header')
+                            .text('Просроченные машины')
+                            .add($('<span>').addClass('badge').text(overdue.length)),
+                        content = _.generateTable(tabl_header, overdue, 'overdue'),
+                        overdue_window = _.generateWindow(header, content, 'warning');
+                    _.container.append(overdue_window);
 
-                    var header = $('<span>').addClass('active-header').text('Машины на стоянке').add($('<span>').addClass('badge').text(active_cars_count));
-                    var content = _.generateTable(tabl_header, active, 'active');
-                    var win = _.generateWindow(header, content);
-                    _.container.empty().append(win);
                 } else {
                     _.criticalError('custom','Ошибка чтения базы!');
                     _.data = {};
@@ -230,7 +265,7 @@ function CarPark(opts) {
                     sessionStorage.setItem('auth', JSON.stringify(auth));
                     // Теперь как братья
                     $('#loginModal').modal('hide');
-                    $('#inputLogin').val(''),
+                    $('#inputLogin').val('');
                     $('#inputPassword').val('');
                     _.buildApp();
                 } else {
@@ -312,7 +347,7 @@ function CarPark(opts) {
             vals['daysPayed'] = $('#daysPayed').val();
             $('#sumPayed').val(Math.floor(parseInt(vals['costPerDay']) * parseInt(vals['daysPayed'])));
         } else {
-            $('#outDate:not(#'+editId+')').val(_.toRusDate(new Date((_.parseDate($('#addDate').val()).getTime() + (parseInt(vals['daysPayed']))*864e5)-1)));
+            $('#outDate:not(#'+editId+')').val(_.toRusDate(new Date((_.parseDate($('#addDate').val()).getTime() + (parseInt(vals['daysPayed']))*864e5))));
             $('#sumPayed:not(#'+editId+')').val(Math.floor(parseInt(vals['costPerDay']) * parseInt(vals['daysPayed'])));
             $('#daysPayed:not(#'+editId+')').val(Math.floor(parseInt(vals['sumPayed']) / parseInt(vals['costPerDay'])));
         }
@@ -336,6 +371,7 @@ function CarPark(opts) {
                     orderNum: parseInt(vals['orderNum']),
                     placeNum: parseInt(vals['placeNum']),
                     ownerName: vals['ownerName'],
+                    ownerContact: vals['ownerContact'],
                     carBrand: vals['carBrand'],
                     gosNum: vals['gosNum'],
                     costPerDay: parseInt(vals['costPerDay']),
@@ -343,7 +379,8 @@ function CarPark(opts) {
                     daysPayed: parseInt(vals['daysPayed']),
                     outDate: _.parseDate(vals['outDate']).getTime()/1e3,
                     addUser: user,
-                    status: 1
+                    status: 1,
+                    description: vals['description']
                 };
 
             _.data[car_id] = car;
@@ -470,8 +507,9 @@ function CarPark(opts) {
         return _.generateTable(table_header_data, data);
     }
 
-    _.generateWindow = function (header, content) {
-        var okno = $('<div>').addClass('panel panel-primary'),
+    _.generateWindow = function (header, content, win_class) {
+        var wclass = win_class ? win_class : 'primary',
+            okno = $('<div>').addClass('panel panel-' + wclass),
             heading = $('<div>').addClass('panel-heading')
                 .append($('<h3>').addClass('panel-title').append(header)),
             body = $('<div>').addClass('panel-body').append(content);
