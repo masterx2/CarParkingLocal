@@ -88,26 +88,22 @@ function CarPark(opts) {
                     .append('<span class="label label-danger">Выход</span>')
                     .click(_.logout);
             $('#login-control').empty().append(user_title.append(user_href));
-            if (!_.checkRights('batman')) {
-                $('.vardump').remove();
-                $('#debug').remove();
-            } else {
-                $('.vardump').hide();
-                $('#debug').show().click(function () {
-                    $('.vardump').slideToggle();
-                });
-            }
-
+            _.displayActive();
         } else {
             $('#login-control').html('<li><a id="loginlink" href="#" data-toggle="modal" data-target="#loginModal">Войти</a></li>');
-            $('#actionLogin').click(_.loginProcess);
-            _.container.empty();
-            $('.vardump').hide();
-            $('#debug').hide();
+            $('#actionLogin').unbind().click(_.loginProcess);
             _.criticalError('guest');
         }
 
-        $("#inputLogin, #inputPassword").keypress(function(e){
+        $('#activeCars').unbind().click(function () { _.displayActive();});
+        $('#overdue').unbind().click(function () { _.displayOverdue();});
+
+        _.container.empty();
+
+        $('#activeCars .badge').text(0);
+        $('#overdue .badge').text(0);
+
+        $("#inputLogin, #inputPassword").unbind().keypress(function(e){
             if (e.keyCode == 13) {
                 $('#actionLogin').trigger('click');
             }
@@ -150,12 +146,77 @@ function CarPark(opts) {
             } else {
                 $('#addDate').removeAttr('disabled');
             }
-
         });
-        _.load();
     };
 
+    _.displayActive = function () {
+        if (_.checkRights('user')) {
+            _.load();
+            tabl_header = [
+                'Квитанция',
+                'Место',
+                'Имя',
+                'Марка',
+                'Гос.Номер',
+                'Стоимость',
+                'Остаток',
+                'Дней'
+            ];
 
+            // Таблица уезжающих сегодня
+            var header = $('<span>')
+                .addClass('leave-today-header')
+                .text('Машины уезжающие сегодня')
+                .add($('<span>').addClass('badge').text(_.leave_today.length));
+
+            if (_.leave_today.length > 0) {
+                var content = _.generateTable(tabl_header, _.leave_today, 'leave-today'),
+                    leave_window = _.generateWindow(header, content, 'success');
+                _.container.empty().append(leave_window);
+            } else {
+                var leave_window = _.generateWindow(header, "<h4>Сегодня никто не уезжает!</h4>", 'success');
+                _.container.empty().append(leave_window);
+            }
+            // Таблица активных машин
+            var header = $('<span>')
+                    .addClass('active-header')
+                    .text('Машины на стоянке')
+                    .add($('<span>').addClass('badge').text(_.active.length)),
+                content = _.generateTable(tabl_header, _.active, 'active'),
+                active_window = _.generateWindow(header, content);
+            _.container.append(active_window);
+        } else {
+            _.criticalError('no-rights');
+        }
+    };
+
+    _.displayOverdue = function () {
+        if (_.checkRights('user')) {
+            _.load();
+
+            tabl_header = [
+                'Квитанция',
+                'Место',
+                'Имя',
+                'Марка',
+                'Гос.Номер',
+                'Стоимость',
+                'Остаток',
+                'Дней'
+            ];
+
+            // Таблица просроченных машин
+            var header = $('<span>')
+                    .addClass('overdue-header')
+                    .text('Просроченные машины')
+                    .add($('<span>').addClass('badge').text(_.overdue.length)),
+                content = _.generateTable(tabl_header, _.overdue, 'overdue'),
+                overdue_window = _.generateWindow(header, content, 'warning');
+            _.container.empty().append(overdue_window);
+        } else {
+            _.criticalError('no-rights');
+        }
+    };
 
     _.load = function () {
         // Права на этот метод
@@ -164,21 +225,13 @@ function CarPark(opts) {
             chrome.storage.local.get('main-storage', function(data) {
                 _.data = data['main-storage']
                 if (_.data) {
-                    var now = new Date().getTime()/1e3,
-                        active = [],
-                        leave_today = [],
-                        overdue = [],
-                        tabl_header = [
-                            'Квитанция',
-                            'Место',
-                            'Имя',
-                            'Марка',
-                            'Гос.Номер',
-                            'Стоимость',
-                            'Остаток',
-                            'Дней'
-                        ];
 
+                    _.active = [];
+                    _.leave_today = [];
+                    _.overdue = [];
+                    _.history = [];
+
+                    var now = new Date().getTime()/1e3;
                     // Логика стоянки
                     for (var order in _.data) {
                         var car = _.data[order];
@@ -199,38 +252,17 @@ function CarPark(opts) {
                             ];
 
                             if (days_left == 0) {
-                                leave_today.push(table_row);
+                                _.leave_today.push(table_row);
                             } else if (days_left < 0) {
-                                overdue.push(table_row);
+                                _.overdue.push(table_row);
                             } else {
-                                active.push(table_row);
+                                _.active.push(table_row);
                             }
                         }
                     }
-                    // Таблица уезжающих сегодня
-                    var header = $('<span>')
-                            .addClass('leave-today-header')
-                            .text('Машины уезжающие сегодня')
-                            .add($('<span>').addClass('badge').text(leave_today.length)),
-                        content = _.generateTable(tabl_header, leave_today, 'leave-today'),
-                        leave_window = _.generateWindow(header, content, 'info');
-                    _.container.empty().append(leave_window);
-                    // Таблица активных машин
-                    var header = $('<span>')
-                        .addClass('active-header')
-                        .text('Машины на стоянке')
-                        .add($('<span>').addClass('badge').text(active.length)),
-                        content = _.generateTable(tabl_header, active, 'active'),
-                        active_window = _.generateWindow(header, content);
-                    _.container.append(active_window);
-                    // Таблица просроченных машин
-                    var header = $('<span>')
-                            .addClass('overdue-header')
-                            .text('Просроченные машины')
-                            .add($('<span>').addClass('badge').text(overdue.length)),
-                        content = _.generateTable(tabl_header, overdue, 'overdue'),
-                        overdue_window = _.generateWindow(header, content, 'warning');
-                    _.container.append(overdue_window);
+
+                    $('#activeCars .badge').text(_.leave_today.length+ _.active.length);
+                    $('#overdue .badge').text(_.overdue.length);
 
                 } else {
                     _.criticalError('custom','Ошибка чтения базы!');
@@ -281,7 +313,7 @@ function CarPark(opts) {
             _.criticalError('empty_login_password');
             $('#loginModal').modal('hide');
         }
-    }
+    };
 
     _.logout = function () {
         // Это была последняя капля, я ухожу!!!
@@ -290,7 +322,7 @@ function CarPark(opts) {
         _.auth_user = null;
         _.auth_rights = null;
         _.buildApp();
-    }
+    };
 
     _.checkRights = function (requestedRights) {
         _.log('А ты кто такой?');
@@ -393,7 +425,7 @@ function CarPark(opts) {
 
     _.checkForm = function() {
         var formValidated = true;
-        $('#addCarModal input').each(function(i,v){
+        $('#addCarModal input:not("#ownerContact")').each(function(i,v){
             if ($(v).val() == '' || parseInt($(v).val()) <= 0) {
                 $(v).css({background: 'red'});
                 setTimeout(function(){
@@ -412,12 +444,12 @@ function CarPark(opts) {
             var wrapper = $('<div>').addClass('col-sm-offset-2 col-sm-8'),
                 addButton = $('<button>')
                     .text('Добавить')
-                    .addClass('btn btn-info')
+                    .addClass('btn btn-info add-user')
                     .click(function () {
                         _.editUser('addNew')
                     });
             _.container.append(wrapper.append(_.generateWindow('Управление Пользователями',
-            _.generateUserGrid(_.users).append(addButton))));
+            _.generateUserGrid(_.users)).append(addButton)));
         } else {
             _.criticalError('no-rights');
         }
@@ -490,7 +522,7 @@ function CarPark(opts) {
     }
 
     _.generateUserGrid = function (users) {
-        table_header_data = ['Логин', 'Имя', 'Права'];
+        table_header_data = ['Логин', 'Имя', 'Права', ''];
         var data = {}
         for (user in users) {
             data[user] = [user,
@@ -498,7 +530,7 @@ function CarPark(opts) {
                 users[user].rights.join(','),
                 $('<button>')
                     .text('Изменить')
-                    .addClass('btn btn-success')
+                    .addClass('btn btn-success pull-right')
                     .click(function () {
                         _.editUser(this);
                     })
@@ -570,7 +602,8 @@ function CarPark(opts) {
     }
 
     _.generateTable = function (table_header_data, data, table_class) {
-        var table = $('<table>').addClass('table '+table_class),
+        var t_class = table_class?table_class:'default';
+            table = $('<table>').addClass('table '+t_class);
         // Prepare header
             table_header = $('<thead>');
         for (var th_index in table_header_data) {

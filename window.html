@@ -18,7 +18,7 @@
 </head>
 <body>
 <div class="container">
-    <nav class="navbar navbar-fixed-top" role="navigation">
+    <nav class="navbar navbar-inverse navbar-fixed-top" role="navigation">
         <div class="navbar-header">
             <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".navbar-ex1-collapse">
                 <span class="sr-only">Показать навигацию</span>
@@ -30,7 +30,7 @@
         </div>
         <div class="collapse navbar-collapse navbar-ex1-collapse">
             <ul class="nav navbar-nav">
-                <li><a href="#">Активные</a></li>
+                <li><a href="#" id="activeCars">Активные <span class="badge">0</span></a></li>
                 <li><a href="#" id="overdue">Просроченные <span class="badge">0</span></a></li>
             </ul>
             <form class="navbar-form navbar-right" role="search">
@@ -158,68 +158,68 @@
                     <div class="form-group">
                         <label for="addDate" class="col-sm-offset-1 col-sm-2 control-label">Дата</label>
                         <div class="col-sm-8">
-                            <input type="text" class="form-control" id="addDate">
+                            <input type="text" class="form-control input-sm" id="addDate">
                         </div>
                     </div>
                     <div class="form-group">
                         <label for="orderNum" class="col-sm-offset-1 col-sm-2 control-label">Квитанция</label>
                         <div class="col-sm-8">
-                            <input type="text" class="form-control" id="orderNum" placeholder="Номер">
+                            <input type="text" class="form-control input-sm" id="orderNum" placeholder="Номер">
                         </div>
                     </div>
                     <div class="form-group">
                         <label for="placeNum" class="col-sm-offset-1 col-sm-2 control-label">Место</label>
                         <div class="col-sm-8">
-                            <input type="text" class="form-control" id="placeNum" placeholder="Номер">
+                            <input type="text" class="form-control input-sm" id="placeNum" placeholder="Номер">
                         </div>
                     </div>
                     <div class="form-group">
                         <label for="ownerName" class="col-sm-offset-1 col-sm-2 control-label">Владелец</label>
                         <div class="col-sm-8">
-                            <input type="text" class="form-control" id="ownerName" placeholder="Ф.И.О.">
+                            <input type="text" class="form-control input-sm" id="ownerName" placeholder="Ф.И.О.">
                         </div>
                     </div>
                     <div class="form-group">
                         <label for="ownercontact" class="col-sm-offset-1 col-sm-2 control-label">Контакты</label>
                         <div class="col-sm-8">
-                            <input type="text" class="form-control" id="ownerContact" placeholder="Телефоный номер, и т.п.">
+                            <input type="text" class="form-control input-sm" id="ownerContact" placeholder="Телефоный номер, и т.п.">
                         </div>
                     </div>
                     <div class="form-group">
                         <label for="carBrand" class="col-sm-offset-1 col-sm-2 control-label">Марка Авто</label>
                         <div class="col-sm-8">
-                            <input type="text" class="form-control" id="carBrand" placeholder="Хонда, Мерседес, Ягуар...">
+                            <input type="text" class="form-control input-sm" id="carBrand" placeholder="Хонда, Мерседес, Ягуар...">
                         </div>
                     </div>
                     <div class="form-group">
                         <label for="gosNum" class="col-sm-offset-1 col-sm-2 control-label">Гос. номер</label>
                         <div class="col-sm-8">
-                            <input type="text" class="form-control" id="gosNum" placeholder="a000сс78">
+                            <input type="text" class="form-control input-sm" id="gosNum" placeholder="a000сс78">
                         </div>
                     </div>
 
                     <div class="form-group">
                         <label for="costPerDay" class="col-sm-offset-1 col-sm-2 control-label">Стоимость</label>
                         <div class="col-sm-8">
-                            <input type="number" class="form-control" id="costPerDay" placeholder="...">
+                            <input type="number" class="form-control input-sm" id="costPerDay" placeholder="...">
                         </div>
                     </div>
                     <div class="form-group">
                         <label for="sumPayed" class="col-sm-offset-1 col-sm-2 control-label">Внесенная сумма</label>
                         <div class="col-sm-8">
-                            <input type="number" class="form-control" id="sumPayed" placeholder="...">
+                            <input type="number" class="form-control input-sm" id="sumPayed" placeholder="...">
                         </div>
                     </div>
                     <div class="form-group">
                         <label for="daysPayed" class="col-sm-offset-1 col-sm-2 control-label">Срок (Дней)</label>
                         <div class="col-sm-8">
-                            <input type="number" class="form-control" id="daysPayed" placeholder="...">
+                            <input type="number" class="form-control input-sm" id="daysPayed" placeholder="...">
                         </div>
                     </div>
                     <div class="form-group">
                         <label for="outDate" class="col-sm-offset-1 col-sm-2 control-label">Дата Съезда</label>
                         <div class="col-sm-8">
-                            <input type="text" class="form-control" id="outDate" placeholder="...">
+                            <input type="text" class="form-control input-sm" id="outDate" placeholder="...">
                         </div>
                     </div>
                     <div class="form-group">
